@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DrivLog - ドライバー運行記録</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="header-container">
+      <div class="logo">
+        <span class="logo-icon">🚚</span>
+        <span>DrivLog</span>
+      </div>
+      <nav>
+        <a href="index.html" class="active">ドライバー画面</a>
+        <a href="admin.html">運行管理者画面</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- ドライバー選択 -->
+    <div class="card">
+      <div class="card-title">👤 ドライバー選択</div>
+      <div class="form-group">
+        <label for="driver-select">あなたの名前を選択してください</label>
+        <select id="driver-select" class="select-custom">
+          <option value="" disabled selected>読み込み中...</option>
+        </select>
+      </div>
+      
+      <!-- 暗証番号入力（簡易ログイン） -->
+      <div id="auth-section" style="display: none; margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 1rem;">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label for="driver-pin">暗証番号 (4桁の数字 / 初期: 1111, 2222, 3333 など)</label>
+          <div style="display: flex; gap: 0.5rem;">
+            <input type="password" id="driver-pin" class="input-custom" pattern="[0-9]*" inputmode="numeric" maxlength="4" placeholder="暗証番号を入力" style="flex: 1;">
+            <button id="btn-login" class="btn-primary" onclick="loginDriver()">ログイン</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="driver-info" style="display: none; margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <span class="text-muted">車両番号:</span> <strong id="vehicle-num">-</strong>
+          </div>
+          <button class="btn-secondary" onclick="logoutDriver()" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">ログアウト</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ステータス管理パネル -->
+    <div class="card" id="status-panel" style="opacity: 0.6; pointer-events: none;">
+      <div class="card-title">⏱ 運行ステータス更新</div>
+      
+      <div style="margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+        <span>現在のステータス:</span>
+        <span id="current-status-badge" class="status-badge status-OFFLINE">未選択</span>
+      </div>
+
+      <div class="action-grid">
+        <button id="btn-driving" class="btn-action btn-driving" onclick="updateStatus('DRIVING')">
+          <span class="icon">🚛</span>
+          <span>運行開始</span>
+          <span class="sub">目的地へ出発</span>
+        </button>
+        <button id="btn-waiting" class="btn-action btn-waiting" onclick="updateStatus('WAITING')">
+          <span class="icon">⏱</span>
+          <span>待機開始</span>
+          <span class="sub">荷待ち・待機開始</span>
+        </button>
+        <button id="btn-working" class="btn-action btn-working" onclick="updateStatus('WORKING')">
+          <span class="icon">📦</span>
+          <span>荷役開始</span>
+          <span class="sub">積込・荷降開始 (待機終了)</span>
+        </button>
+        <button id="btn-offline" class="btn-action btn-offline" onclick="updateStatus('OFFLINE')">
+          <span class="icon">🏠</span>
+          <span>業務終了</span>
+          <span class="sub">帰社・本日の業務終了</span>
+        </button>
+      </div>
+
+      <div class="form-group" style="margin-top: 1.5rem;">
+        <label for="action-note">メモ (任意 / 例: 倉庫混雑、渋滞など)</label>
+        <input type="text" id="action-note" class="input-custom" placeholder="ステータス更新時に一緒に送信されます">
+      </div>
+    </div>
+
+    <!-- 送信履歴 -->
+    <div class="card" id="history-panel" style="display: none;">
+      <div class="card-title">📋 本日の送信履歴</div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>時刻</th>
+              <th>ステータス</th>
+              <th>メモ</th>
+            </tr>
+          </thead>
+          <tbody id="history-list">
+            <!-- 動的に追加 -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <div id="toast" class="toast">記録されました</div>
+
+  <footer>
+    <p>&copy; 2026 DrivLog. All Rights Reserved. 物流DX 2024年問題対応ソリューション</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

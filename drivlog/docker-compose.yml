@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  drivlog-app:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: drivlog:latest
+    container_name: drivlog-app
+    ports:
+      - "8000:8000"
+    volumes:
+      # SQLiteデータベースの永続化ボリュームマウント
+      - ./data:/data
+      # 開発中にHTML/CSS/JSの変更を即時反映するためのマウント（任意）
+      - ./static:/app/static
+    environment:
+      - DB_PATH=/data/drivlog.db
+      - TZ=Asia/Tokyo
+    restart: always

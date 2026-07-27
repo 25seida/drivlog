@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DrivLog - 運行管理者ダッシュボード</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="header-container">
+      <div class="logo">
+        <span class="logo-icon">🚚</span>
+        <span>DrivLog <span style="font-size: 0.8rem; font-weight: normal; vertical-align: middle; opacity: 0.8;">Admin</span></span>
+      </div>
+      <nav>
+        <a href="index.html">ドライバー画面</a>
+        <a href="admin.html" class="active">運行管理者画面</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- 上部アクションバー -->
+    <div class="card flex-between">
+      <div>
+        <h2 style="font-size: 1.4rem; font-weight: 700;">リアルタイム運行状況モニター</h2>
+        <p class="text-muted" style="font-size: 0.85rem; margin-top: 0.25rem;">ドライバーの稼働状況および本日の累積荷待ち時間を監視します。</p>
+      </div>
+      <div class="flex-gap">
+        <button onclick="fetchStatus()" class="btn-secondary">🔄 更新</button>
+        <a href="/api/logs/download" class="btn-primary" style="text-decoration: none; display: inline-block;">📥 CSVダウンロード</a>
+      </div>
+    </div>
+
+    <!-- 運行ステータス一覧 -->
+    <div class="card">
+      <div class="card-title">📊 ドライバー稼働状況 (本日)</div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>ドライバー名</th>
+              <th>車両番号</th>
+              <th>現在のステータス</th>
+              <th>本日の累積待機時間</th>
+              <th>最終更新時刻</th>
+            </tr>
+          </thead>
+          <tbody id="status-table-body">
+            <tr>
+              <td colspan="5" style="text-align: center;" class="text-muted">読み込み中...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 管理操作（ドライバー追加 & メンテナンス） -->
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
+      <!-- ドライバー追加 -->
+      <div class="card">
+        <div class="card-title">➕ 新規ドライバー登録</div>
+        <form id="add-driver-form" onsubmit="addDriver(event)">
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label for="driver-name">ドライバー氏名</label>
+              <input type="text" id="driver-name" class="input-custom" placeholder="例: 佐藤 健太" required>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label for="vehicle-number">車両番号</label>
+              <input type="text" id="vehicle-number" class="input-custom" placeholder="例: 品川 100 え 56-78" required>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label for="driver-pin-new">暗証番号 (4桁の数字)</label>
+              <input type="password" id="driver-pin-new" class="input-custom" pattern="[0-9]*" inputmode="numeric" maxlength="4" placeholder="例: 9999" required>
+            </div>
+          </div>
+          <button type="submit" class="btn-primary">登録する</button>
+        </form>
+      </div>
+
+      <!-- システム管理（デモ用リセット） -->
+      <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <div class="card-title" style="color: var(--color-offline);">⚙️ システムメンテナンス</div>
+          <p class="text-muted" style="font-size: 0.8rem; line-height: 1.4; margin-bottom: 1rem;">
+            デモ発表・動作テスト用に、データベースの運行ログをリセットして初期状態に戻すことができます。
+          </p>
+        </div>
+        <button onclick="resetSystem()" class="btn-danger">⚠️ データをリセットする</button>
+      </div>
+    </div>
+  </main>
+
+  <div id="toast" class="toast">更新されました</div>
+
+  <footer>
+    <p>&copy; 2026 DrivLog. All Rights Reserved. 物流DX 2024年問題対応ソリューション</p>
+  </footer>
+
+  <script src="admin.js"></script>
+</body>
+</html>
