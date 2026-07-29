@@ -143,22 +143,55 @@ def get_today_logs():
 
 @app.get("/api/logs/download")
 def download_logs():
+    tokyo = zoneinfo.ZoneInfo("Asia/Tokyo")
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
-        SELECT logs.id, drivers.name, drivers.vehicle_number, logs.status, logs.timestamp, logs.note
+        SELECT logs.id, logs.driver_id, drivers.name, drivers.vehicle_number, logs.status, logs.timestamp, logs.note
         FROM logs
         JOIN drivers ON logs.driver_id = drivers.id
-        ORDER BY logs.timestamp DESC
+        ORDER BY logs.timestamp ASC
     ''')
-    rows = cursor.fetchall()
+    rows = [dict(r) for r in cursor.fetchall()]
     conn.close()
+    
+    # ドライバーごと、日付ごとのログをグループ化
+    from collections import defaultdict
+    driver_date_logs = defaultdict(list)
+    for r in rows:
+        dt = datetime.fromisoformat(r["timestamp"])
+        date_str = dt.astimezone(tokyo).date().isoformat()
+        driver_date_logs[(r["driver_id"], date_str)].append(r)
+        
+    # 各グループの累積待機時間を計算
+    accumulated_wait = {}
+    today_str = datetime.now(tokyo).date().isoformat()
+    
+    for (driver_id, date_str), logs in driver_date_logs.items():
+        total_wait_minutes = 0
+        wait_start = None
+        for l in logs:
+            l_time = datetime.fromisoformat(l["timestamp"])
+            if l["status"] == "WAITING":
+                wait_start = l_time
+            elif wait_start is not None and l["status"] in ("WORKING", "DRIVING", "OFFLINE"):
+                diff = l_time - wait_start
+                total_wait_minutes += diff.total_seconds() / 60.0
+                wait_start = None
+        
+        # 進行中の待機（日付が本日で、かつ待機中の場合）
+        if wait_start is not None and date_str == today_str:
+            now = datetime.now(tokyo)
+            diff = now - wait_start
+            total_wait_minutes += max(0.0, diff.total_seconds() / 60.0)
+            
+        accumulated_wait[(driver_id, date_str)] = round(total_wait_minutes, 1)
     
     output = io.StringIO()
     output.write('\ufeff')  # BOM for Excel
     writer = csv.writer(output)
     
-    writer.writerow(["ログID", "ドライバー名", "車両番号", "運行ステータス", "記録時刻", "メモ"])
+    writer.writerow(["ログID", "ドライバー名", "車両番号", "運行ステータス", "記録時刻", "メモ", "当日の累計待機時間(分)"])
     
     status_map = {
         "OFFLINE": "業務終了 (未稼働)",
@@ -167,16 +200,21 @@ def download_logs():
         "WORKING": "荷役中 (積込/荷降)"
     }
     
-    for r in rows:
+    # 最新のログが上に来るように逆順で書き出し
+    for r in reversed(rows):
         dt = datetime.fromisoformat(r["timestamp"])
+        date_str = dt.astimezone(tokyo).date().isoformat()
         formatted_time = dt.strftime("%Y/%m/%d %H:%M:%S")
+        wait_time = accumulated_wait.get((r["driver_id"], date_str), 0.0)
+        
         writer.writerow([
             r["id"],
             r["name"],
             r["vehicle_number"],
             status_map.get(r["status"], r["status"]),
             formatted_time,
-            r["note"] or ""
+            r["note"] or "",
+            wait_time
         ])
         
     csv_data = output.getvalue()
